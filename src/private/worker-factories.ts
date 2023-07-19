@@ -10,25 +10,27 @@ const NODE_ENVIRONMENT: {
     path: null
 }
 
-export async function createWebWorker(): Promise<MessagePort> {
+export async function createWebWorker<T>(factory: (port: MessagePort) => T): Promise<T> {
     const workerUrl = getWebWorkerUrl()
     const worker = new Worker(workerUrl)
     const channel = new MessageChannel()
+    const port = factory(channel.port1)
     worker.postMessage(channel.port2, [channel.port2])
 
-    return channel.port1
+    return port
 }
-export async function createWorkerThread(): Promise<MessagePort> {
+export async function createWorkerThread<T>(factory: (port: MessagePort) => T): Promise<T> {
     const wt = NODE_ENVIRONMENT.worker_threads ??= await import('node:worker_threads')
     const workerPath = await getNodeWorkerPath('thread')
     const channel = new wt.MessageChannel()
+    const port = factory(new MessagePortAdapter(channel.port1))
 
     new wt.Worker(workerPath, {
         workerData: channel.port2,
         transferList: [channel.port2]
     })
 
-    return new MessagePortAdapter(channel.port1)
+    return port
 }
 
 async function getNodeWorkerPath(name: string): Promise<string> {

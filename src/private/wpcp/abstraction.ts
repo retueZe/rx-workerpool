@@ -1,6 +1,4 @@
 export type WpcpPoolArgsTypeMap = {
-    'primary-ready': []
-    'secondary-ready': []
     'begin-execute': [callback: string, args: any[]]
     'cancel': [token: string]
     'abort': []
@@ -10,8 +8,7 @@ export type WpcpPoolResultTypeMap = {
 }
 export type WpcpPoolMethodName = keyof WpcpPoolArgsTypeMap
 export type WpcpWorkerArgsTypeMap = {
-    'primary-ready': []
-    'secondary-ready': []
+    'ready': []
     'end-execute': [token: string, status: WpcpExecutionStatus, value: any]
 }
 export type WpcpWorkerMethodName = keyof WpcpWorkerArgsTypeMap

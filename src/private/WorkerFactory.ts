@@ -1,1 +1,1 @@
-export type WorkerFactory = () => Promise<MessagePort>
+export type WorkerFactory = <T>(factory: (port: MessagePort) => T) => Promise<T>

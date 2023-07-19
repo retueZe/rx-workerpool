@@ -17,6 +17,7 @@ export class WpcpWorkerPort extends WpcpPortBase implements IWpcpWorkerPort {
 
     constructor(port: MessagePort) {
         super(port)
+        this.postNotification('ready', [])
     }
 
     private _endExecution(status: WpcpExecutionStatus, value: any): void {

@@ -1,14 +1,5 @@
-import { MessageChannel as NodeMessageChannel, MessagePort as NodeMessagePort } from 'worker_threads'
+import { MessagePort as NodeMessagePort } from 'worker_threads'
 
-export class MessageChannelAdapter implements MessageChannel {
-    readonly port1: MessagePort
-    readonly port2: MessagePort
-
-    constructor({port1, port2}: NodeMessageChannel) {
-        this.port1 = new MessagePortAdapter(port1)
-        this.port2 = new MessagePortAdapter(port2)
-    }
-}
 export class MessagePortAdapter implements MessagePort {
     onmessage: ((this: MessagePort, ev: MessageEvent<any>) => any) | null =
         MessagePortAdapter._defaultOnMessage.bind(this)

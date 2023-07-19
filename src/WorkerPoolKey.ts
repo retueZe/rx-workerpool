@@ -71,8 +71,7 @@ export class WorkerPoolKey implements IWorkerPoolKey {
     private async _createPort(add?: boolean | null): Promise<IWpcpPoolPort> {
         add ??= false
         const factory = this._getWorkerFactory()
-        const rawPoolPort = await factory()
-        const poolPort = new WpcpPoolPort(rawPoolPort)
+        const poolPort = await factory(port => new WpcpPoolPort(port))
 
         if (add) this._busyPorts.push(poolPort)
 
