@@ -40,6 +40,7 @@
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.3",
     "@rollup/plugin-typescript": "^11.1.2",
+    "@types/node": "^20.4.2",
     "@typescript-eslint/eslint-plugin": "^6.1.0",
     "@typescript-eslint/parser": "^6.1.0",
     "eslint": "^8.45.0",
@@ -47,5 +48,9 @@
     "rollup": "^3.26.3",
     "rollup-plugin-dts": "^5.3.0",
     "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "browser-or-node": "^2.1.1",
+    "rxjs": "^7.0.0"
   }
 }
