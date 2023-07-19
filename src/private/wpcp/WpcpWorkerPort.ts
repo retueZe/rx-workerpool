@@ -10,7 +10,10 @@ export class WpcpWorkerPort extends WpcpPortBase implements IWpcpWorkerPort {
     private _currentToken: string | null = null
     private _currentCancellationSource: IWpcpCancellationSource | null = null
     private _isClosed2 = false
-    isAbortRequested = false
+    private _isAbortRequested = false
+    get isAbortRequested(): boolean {
+        return this._isAbortRequested
+    }
 
     constructor(port: MessagePort) {
         super(port)
@@ -67,14 +70,14 @@ export class WpcpWorkerPort extends WpcpPortBase implements IWpcpWorkerPort {
 
             cancellationSource.cancel()
         } else if (request.method === 'abort') {
-            this.isAbortRequested = true
+            this._isAbortRequested = true
             this._currentCancellationSource?.cancel()
         }
     }
     close(): void {
         if (this._isClosed2) return
 
-        this.isAbortRequested = true
+        this._isAbortRequested = true
 
         if (this._currentToken === null) {
             this._isClosed2 = true
