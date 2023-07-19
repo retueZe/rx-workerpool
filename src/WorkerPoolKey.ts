@@ -14,6 +14,8 @@ export class WorkerPoolKey implements IWorkerPoolKey {
     private _desiredWorkerType: WorkerType
     private _minWorkerCount: number
     private _maxWorkerCount: number | null
+    private _isAbortRequested = false
+    private _isAborted = false
     private get _workerCount(): number {
         return this._freePorts.length + this._busyPorts.length
     }
@@ -41,6 +43,12 @@ export class WorkerPoolKey implements IWorkerPoolKey {
 
         this._maxWorkerCount = value
         this._adjustWorkerCount()
+    }
+    get isAbortRequested(): boolean {
+        return this._isAbortRequested
+    }
+    get isAborted(): boolean {
+        return this._isAborted
     }
 
     constructor(options?: Readonly<WorkerPoolOptions> | null) {
@@ -152,15 +160,42 @@ export class WorkerPoolKey implements IWorkerPoolKey {
             })
         })
     }
-    dispose(): void {
-        // TODO
+    private _throwIfAbortRequested(): void {
+        if (this.isAbortRequested) throw new Error('This pool has been aborted.')
+    }
+    async abort(): Promise<void> {
+        if (this._isAbortRequested) return
+
+        this._isAbortRequested = true
+
+        await new Promise<void>((resolve, reject) => {
+            let subscription: Unsubscribable | null = null
+            subscription = this._awakenedSubject.subscribe({
+                next: () => {
+                    if (this._busyPorts.length > 0.5) return
+
+                    subscription?.unsubscribe()
+                    subscription = null
+                    resolve()
+                },
+                error: reject,
+                complete: () => reject(new Error('STUB: other source of completion'))
+            })
+        })
+
+        this._awakenedSubject.complete()
+        this._isAborted = true
     }
     setDesiredWorkerType(type: WorkerType | null): this {
+        this._throwIfAbortRequested()
+
         this._desiredWorkerType = WorkerPoolKey._normalizeWorkerType(type)
 
         return this
     }
     async queue<C extends (...args: any[]) => any>(callback: C, ...args: Parameters<C>): Promise<ReturnType<C>> {
+        this._throwIfAbortRequested()
+
         const action = this._getQueueWorkerAction()
         const port = action === 'reuse-cached'
             ? this._reusePort()
