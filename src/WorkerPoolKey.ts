@@ -7,7 +7,8 @@ import type { WorkerFactory } from './private/WorkerFactory.js'
 import { IWpcpPoolPort, WpcpPoolPort } from './private/wpcp/index.js'
 import { WorkerPool } from './WorkerPool.js'
 
-export class WorkerPoolKey implements IWorkerPoolKey {
+/** @since v1.0.0 */
+export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey implements IWorkerPoolKey {
     private readonly _freePorts: IWpcpPoolPort[] = []
     private readonly _busyPorts: IWpcpPoolPort[] = []
     private readonly _awakenedSubject = new Subject<void>()
@@ -219,6 +220,10 @@ export class WorkerPoolKey implements IWorkerPoolKey {
         }
     }
 }
+type WorkerPoolKeyConstructor = {
+    new(options?: Readonly<WorkerPoolOptions> | null): IWorkerPoolKey
+}
+/** @since v1.0.0 */
 export type WorkerPoolOptions = Partial<{
     desiredWorkerType: WorkerType | null
     minWorkerCount: number | null
