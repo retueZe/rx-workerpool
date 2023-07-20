@@ -1,5 +1,5 @@
 import { Subject, Unsubscribable } from 'rxjs'
-import { IWpcpCancellationSignal, IWpcpCancellationSource, IWpcpPoolPort, WpcpExecutionStatus, WpcpRequest } from './abstraction.js'
+import type { IWpcpCancellationSignal, IWpcpCancellationSource, IWpcpPoolPort, WpcpExecutionStatus, WpcpRequest } from './abstraction.js'
 import { ExecutionCancelledError } from './ExecutionCancelledError.js'
 import { WpcpPortBase } from './WpcpPortBase.js'
 

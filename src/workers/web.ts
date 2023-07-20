@@ -1,4 +1,4 @@
-import { IWpcpWorkerPort } from '../private/wpcp/abstraction.js'
+import type { IWpcpWorkerPort } from '../private/wpcp/abstraction.js'
 import { WpcpWorkerPort } from '../private/wpcp/WpcpWorkerPort.js'
 import * as Serialization from '../serialization.js'
 

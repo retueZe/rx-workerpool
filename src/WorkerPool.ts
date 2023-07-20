@@ -1,4 +1,4 @@
-import type { IWorkerPool, IWorkerPoolKey } from './abstraction.js'
+import type { IWorkerPool, IWorkerPoolItem, IWorkerPoolKey } from './abstraction.js'
 
 /** @since v1.0.0 */
 export const WorkerPool: WorkerPoolConstructor = class WorkerPool implements IWorkerPool {
@@ -8,7 +8,7 @@ export const WorkerPool: WorkerPoolConstructor = class WorkerPool implements IWo
 
     constructor(private readonly _key: IWorkerPoolKey) {}
 
-    queue<C extends (...args: any[]) => any>(callback: C, ...args: Parameters<C>): Promise<ReturnType<C>> {
+    queue<C extends (...args: any[]) => any>(callback: C, ...args: Parameters<C>): IWorkerPoolItem<ReturnType<C>> {
         return this._key.queue(callback, ...args)
     }
 }

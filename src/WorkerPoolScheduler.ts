@@ -1,9 +1,15 @@
 import { SchedulerAction, SchedulerLike, Subscription } from 'rxjs'
 import type { IWorkerPool, IWorkerPoolItem } from './abstraction.js'
+import { getSharedWorkerPool } from './getSharedWorkerPool.js'
 import { deserializeFunction, serializeFunction } from './serialization.js'
 
 /** @since v1.0.0 */
 export const WorkerPoolScheduler: WorkerPoolSchedulerConstructor = class WorkerPoolScheduler implements SchedulerLike {
+    private static _shared: SchedulerLike | null = null
+    static get SHARED(): SchedulerLike {
+        return this._shared ??= new WorkerPoolScheduler(getSharedWorkerPool())
+    }
+
     constructor(private readonly _pool: IWorkerPool) {}
 
     schedule<T>(work: (this: SchedulerAction<T>, state: T) => void, delay: number, state: T): Subscription
@@ -16,6 +22,9 @@ export const WorkerPoolScheduler: WorkerPoolSchedulerConstructor = class WorkerP
     }
 }
 type WorkerPoolSchedulerConstructor = {
+    /** @since v1.0.0 */
+    readonly SHARED: SchedulerLike
+
     /** @since v1.0.0 */
     new(pool: IWorkerPool): SchedulerLike
 }
