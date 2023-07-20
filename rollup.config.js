@@ -2,8 +2,13 @@ import typescript from '@rollup/plugin-typescript'
 import terser from '@rollup/plugin-terser'
 import dts from 'rollup-plugin-dts'
 import * as path from 'node:path'
+import { readdirSync } from 'node:fs'
 
-const EXTERNAL = []
+const EXTERNAL = [
+    'rxjs', 'browser-or-node',
+    'node:worker_threads', 'node:url', 'node:path'
+]
+const WORKERS_EXTERNAL = ['rxjs', 'node:worker_threads']
 
 function createEntryFileNames(extension) {
     extension ??= '.js'
@@ -38,6 +43,18 @@ function applyDefaultConfig(config) {
         external: EXTERNAL
     }
 }
+function workerEntryFileNames(chunk) {
+    const pathSegments = path
+        .relative('./src', chunk.facadeModuleId)
+        .replace(/\.[^\\/.]+$/, '')
+        .split(/[\\/]/)
+
+    return pathSegments.join('/') + '.js'
+}
+function getWorkerEntries() {
+    return readdirSync('src/workers')
+        .map(entry => 'src/workers/' + entry)
+}
 
 /** @type {import('rollup').RollupOptions[]} */
 const config = [
@@ -66,5 +83,20 @@ const config = [
         },
         plugins: [dts()]
     }
-]
-export default config.map(applyDefaultConfig)
+].map(applyDefaultConfig)
+export default config.concat([
+    {
+        input: getWorkerEntries(),
+        output: {
+            dir: 'build',
+            entryFileNames: workerEntryFileNames,
+            chunkFileNames: '.chunks/[name]-[hash].js',
+            format: 'esm'
+        },
+        plugins: [
+            typescript(),
+            terser({ecma: 2020})
+        ],
+        external: WORKERS_EXTERNAL
+    }
+])
