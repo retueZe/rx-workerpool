@@ -225,8 +225,11 @@ type WorkerPoolKeyConstructor = {
 }
 /** @since v1.0.0 */
 export type WorkerPoolOptions = Partial<{
+    /** @since v1.0.0 */
     desiredWorkerType: WorkerType | null
+    /** @since v1.0.0 */
     minWorkerCount: number | null
+    /** @since v1.0.0 */
     maxWorkerCount: number | null
 }>
 type QueueWorkerAction =
