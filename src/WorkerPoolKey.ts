@@ -1,7 +1,7 @@
 import { isNode } from 'browser-or-node'
 import { Subject, Unsubscribable } from 'rxjs'
 import type { IWorkerPool, IWorkerPoolItem, IWorkerPoolKey, WorkerType } from './abstraction.js'
-import { serializeFunction } from './private/serialization.js'
+import { serializeFunction } from './serialization.js'
 import { createWebWorker, createWorkerThread } from './private/worker-factories.js'
 import type { WorkerFactory } from './private/WorkerFactory.js'
 import { IWpcpPoolPort, WpcpPoolPort } from './private/wpcp/index.js'

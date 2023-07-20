@@ -1,9 +1,16 @@
 const FUNCTION_PATTERN = /^(?:function)\s*(?<name>[a-zA-Z_$][a-zA-Z0-9_$]*)\s*\((?<args>[^)]*)\)\s*{(?<code>.*?)}$/gs
 
-// lambdas are not allowed
+/**
+ * In current implementation: `callback.toString()`. Lambdas are not allowed.
+ * @since v1.0.0
+ */
 export function serializeFunction(callback: (...args: any[]) => any): string {
     return callback.toString()
 }
+/**
+ * Deserializes {@link serializeFunction} result and returns dynamically created function via {@link Function}'s constructor.
+ * @since v1.0.0
+ */
 export function deserializeFunction(input: string): (...args: any[]) => any {
     const match = FUNCTION_PATTERN.exec(input)
 

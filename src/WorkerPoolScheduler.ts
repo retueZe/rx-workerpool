@@ -1,6 +1,6 @@
 import { SchedulerAction, SchedulerLike, Subscription } from 'rxjs'
 import type { IWorkerPool, IWorkerPoolItem } from './abstraction.js'
-import { deserializeFunction, serializeFunction } from './private/serialization.js'
+import { deserializeFunction, serializeFunction } from './serialization.js'
 
 /** @since v1.0.0 */
 export const WorkerPoolScheduler: WorkerPoolSchedulerConstructor = class WorkerPoolScheduler implements SchedulerLike {

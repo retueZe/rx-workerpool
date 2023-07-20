@@ -1,5 +1,5 @@
 import { Subject } from 'rxjs'
-import { deserializeFunction } from '../serialization.js'
+import { deserializeFunction } from '../../serialization.js'
 import type { IWpcpCancellationSignal, IWpcpCancellationSource, IWpcpWorkerPort, WpcpExecutionRequest, WpcpExecutionStatus, WpcpRequest } from './abstraction.js'
 import { ExecutionCancelledError } from './ExecutionCancelledError.js'
 import { generateToken } from './generateToken.js'
