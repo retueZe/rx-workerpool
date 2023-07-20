@@ -1,6 +1,6 @@
 import { MessagePort, workerData } from 'node:worker_threads'
 import { MessagePortAdapter } from '../private/node-adapters.js'
-import { WpcpWorkerPort } from '../private/wpcp/index.js'
+import { PortAbortedError, WpcpWorkerPort } from '../private/wpcp/index.js'
 import * as Serialization from '../serialization.js'
 
 // injecting serialization functions
@@ -11,10 +11,14 @@ const ADAPTED_RAW_PORT = new MessagePortAdapter(RAW_PORT)
 const PORT = new WpcpWorkerPort(ADAPTED_RAW_PORT)
 
 while (!PORT.isAbortRequested) {
-    const request = await PORT.waitForExecutionRequest()
+    const request = await PORT.waitForExecutionRequest().catch(error => error.name === PortAbortedError.name
+        ? null
+        : Promise.reject(error))
+
+    if (request === null) break
 
     try {
-        const result = request.callback(request.args)
+        const result = request.callback(...request.args)
 
         request.resolve(result)
     } catch (error) {

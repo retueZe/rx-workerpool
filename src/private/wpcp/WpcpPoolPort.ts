@@ -39,6 +39,7 @@ export class WpcpPoolPort extends WpcpPortBase implements IWpcpPoolPort {
         this._isClosed2 = true
         this._readySubject.error(new Error('This port has been closed.'))
         this._endExecuteSubject.complete()
+        this.postNotification('abort', [])
         super.close()
     }
     async beginExecute(callback: string, args: any[]): Promise<string | null> {

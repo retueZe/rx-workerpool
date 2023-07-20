@@ -1,6 +1,9 @@
 import { MessagePort as NodeMessagePort } from 'worker_threads'
 
 export class MessagePortAdapter implements MessagePort {
+    // shit typings. too lazy to type all this threefold totally unneeded crap
+    private readonly _listenerMap = new Map<any, any>()
+
     onmessage: ((this: MessagePort, ev: MessageEvent<any>) => any) | null =
         MessagePortAdapter._defaultOnMessage.bind(this)
     onmessageerror: ((this: MessagePort, ev: MessageEvent<any>) => any) | null =
@@ -31,17 +34,27 @@ export class MessagePortAdapter implements MessagePort {
         const once = typeof options === 'boolean'
             ? options
             : options?.once ?? false
+        const wrappedListener = (data: any): void => {
+            listener.call(this, new MessageEvent('message', {
+                data
+            }))
+        }
+        this._listenerMap.set(listener, wrappedListener)
 
         if (once)
-            this._source.once(type, listener)
+            this._source.once(type, wrappedListener)
         else
-            this._source.on(type, listener)
+            this._source.on(type, wrappedListener)
     }
     removeEventListener<K extends keyof MessagePortEventMap>(
         type: K,
         listener: (this: MessagePort, event: MessagePortEventMap[K]) => any
     ): void {
-        this._source.off(type, listener)
+        const wrappedListener = this._listenerMap.get(listener)
+
+        if (typeof wrappedListener === 'undefined') return
+
+        this._source.off(type, wrappedListener)
     }
     dispatchEvent(event: Event): boolean {
         return this._source.emit(event.type)

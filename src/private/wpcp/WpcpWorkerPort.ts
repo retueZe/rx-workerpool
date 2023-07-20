@@ -3,6 +3,7 @@ import { deserializeFunction } from '../../serialization.js'
 import type { IWpcpCancellationSignal, IWpcpCancellationSource, IWpcpWorkerPort, WpcpExecutionRequest, WpcpExecutionStatus, WpcpRequest } from './abstraction.js'
 import { ExecutionCancelledError } from './ExecutionCancelledError.js'
 import { generateToken } from './generateToken.js'
+import { PortAbortedError } from './PortAbortedError.js'
 import { WpcpPortBase } from './WpcpPortBase.js'
 
 export class WpcpWorkerPort extends WpcpPortBase implements IWpcpWorkerPort {
@@ -73,6 +74,7 @@ export class WpcpWorkerPort extends WpcpPortBase implements IWpcpWorkerPort {
         } else if (request.method === 'abort') {
             this._isAbortRequested = true
             this._currentCancellationSource?.cancel()
+            this._executionRequestSubject.complete()
         }
     }
     close(): void {
@@ -92,7 +94,9 @@ export class WpcpWorkerPort extends WpcpPortBase implements IWpcpWorkerPort {
         if (this.isAbortRequested) throw new Error('This port has been closed.')
 
         return new Promise<WpcpExecutionRequest>((resolve, reject) => {
-            const onCompleted = () => reject(new Error('This port has been closed.'))
+            const onCompleted = (error?: any): void => reject(typeof error === 'undefined'
+                ? new PortAbortedError('This port has been closed.')
+                : error)
             this._executionRequestSubject.subscribe({
                 next: resolve,
                 error: onCompleted,

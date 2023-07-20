@@ -177,12 +177,19 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
 
         return [port, token]
     }
+    // TODO: when port is initializing, it's not in `_freePorts` or `_busyPorts`, so, calling abort doesn't abort them
+    // TODO: have to fix it
     async abort(): Promise<void> {
         if (this._isAbortRequested) return
 
         this._isAbortRequested = true
 
-        await new Promise<void>((resolve, reject) => {
+        for (const port of this._freePorts)
+            port.close()
+
+        this._freePorts.length = 0
+
+        if (this._busyPorts.length > 0.5) await new Promise<void>((resolve, reject) => {
             let subscription: Unsubscribable | null = null
             subscription = this._awakenedSubject.subscribe({
                 next: () => {

@@ -1,4 +1,4 @@
-const FUNCTION_PATTERN = /^(?:function)\s*(?<name>[a-zA-Z_$][a-zA-Z0-9_$]*)\s*\((?<args>[^)]*)\)\s*{(?<code>.*?)}$/gs
+const FUNCTION_PATTERN = /^(?:function)[^(]*\((?<args>[^)]*)\)\s*{(?<code>.*?)}$/gs
 const LAMBDA_PATTERN = /^\((?<args>[^)]*)\)\s*=>\s*{(?<code>.*)}$/gs
 
 /**
@@ -21,7 +21,7 @@ export function deserializeFunction(input: string): (...args: any[]) => any {
 
     if (match === null) throw new Error('Bad input.')
 
-    const {_args, code} = match.groups!
+    const {args: _args, code} = match.groups!
     const args = _args
         .split(',')
         .map(arg => arg.trim())

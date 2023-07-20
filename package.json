@@ -31,7 +31,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "build:dev": "tsc --inlineSourceMap",
+    "build:dev": "tsc --inlineSourceMap --removeComments",
     "build:prod": "npm run lint && rollup -c",
     "clean": "rm -rf build",
     "prepare": "npm run clean && npm run build:prod",

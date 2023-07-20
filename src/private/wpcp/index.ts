@@ -1,6 +1,7 @@
 export * from './abstraction.js'
 export * from './ExecutionCancelledError.js'
 export * from './generateToken.js'
+export * from './PortAbortedError.js'
 export * from './WpcpPoolPort.js'
 export * from './WpcpPortBase.js'
 export * from './WpcpWorkerPort.js'
