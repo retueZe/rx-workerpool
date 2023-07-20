@@ -70,7 +70,6 @@ class WorkerPoolSchedulerAction<T> extends Subscription implements SchedulerActi
 // TODO: work: (this: SchedulerAction<T>, state: T) => void
 // TODO:        ~~~~~~~~~~~~~~~~~~~~~~~~
 function _queueCallback(_work: string, state: any): void {
-    // WARN: assuming that `deserializeFunction` is already in the scope, but it isn't
     const work = deserializeFunction(_work)
 
     work(state)

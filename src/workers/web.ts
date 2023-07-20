@@ -1,5 +1,9 @@
 import { IWpcpWorkerPort } from '../private/wpcp/abstraction.js'
 import { WpcpWorkerPort } from '../private/wpcp/WpcpWorkerPort.js'
+import * as Serialization from '../serialization.js'
+
+// injecting serialization functions
+Object.assign(globalThis, Serialization)
 
 onmessage = event => {
     const rawPort: MessagePort = event.data
