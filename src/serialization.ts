@@ -1,7 +1,8 @@
 const FUNCTION_PATTERN = /^(?:function)\s*(?<name>[a-zA-Z_$][a-zA-Z0-9_$]*)\s*\((?<args>[^)]*)\)\s*{(?<code>.*?)}$/gs
+const LAMBDA_PATTERN = /^\((?<args>[^)]*)\)\s*=>\s*{(?<code>.*)}$/gs
 
 /**
- * In current implementation: `callback.toString()`. Lambdas are not allowed.
+ * In current implementation: `callback.toString()`.
  *
  * **This function is injected in workers' global scope.**
  * @since v1.0.0
@@ -16,7 +17,7 @@ export function serializeFunction(callback: (...args: any[]) => any): string {
  * @since v1.0.0
  */
 export function deserializeFunction(input: string): (...args: any[]) => any {
-    const match = FUNCTION_PATTERN.exec(input)
+    const match = FUNCTION_PATTERN.exec(input) ?? LAMBDA_PATTERN.exec(input)
 
     if (match === null) throw new Error('Bad input.')
 

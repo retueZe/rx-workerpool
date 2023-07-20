@@ -32,7 +32,7 @@ export interface IWorkerPool {
     readonly isAbortRequested: boolean
 
     /**
-     * The {@link callback} is serialized by non-standard function serializer, the {@link args} are serialized by default. The {@link callback} cannot be a lambda.
+     * The {@link callback} is serialized by non-standard function serializer, the {@link args} are serialized by default.
      * @since v1.0.0
      */
     queue<C extends (...args: any[]) => any>(
