@@ -54,9 +54,7 @@ class WorkerPoolSchedulerAction<T> extends Subscription implements SchedulerActi
         }
     }
     private _scheduleCore(state: T | undefined): void {
-        // MAYBE: remove?
-        if (this.closed) return
-
+        this._timeout = null
         this._item = this._pool.queue(_queueCallback, this._serializedWork, state)
     }
     schedule(state?: T, delay?: number): Subscription {
