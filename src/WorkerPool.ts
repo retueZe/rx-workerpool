@@ -13,5 +13,6 @@ export const WorkerPool: WorkerPoolConstructor = class WorkerPool implements IWo
     }
 }
 type WorkerPoolConstructor = {
+    /** @since v1.0.0 */
     new(key: IWorkerPoolKey): IWorkerPool
 }

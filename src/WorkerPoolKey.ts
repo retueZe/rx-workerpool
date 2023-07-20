@@ -1,6 +1,6 @@
 import { isNode } from 'browser-or-node'
 import { Subject, Unsubscribable } from 'rxjs'
-import type { IWorkerPool, IWorkerPoolKey, WorkerType } from './abstraction.js'
+import type { IWorkerPool, IWorkerPoolItem, IWorkerPoolKey, WorkerType } from './abstraction.js'
 import { serializeFunction } from './private/serialization.js'
 import { createWebWorker, createWorkerThread } from './private/worker-factories.js'
 import type { WorkerFactory } from './private/WorkerFactory.js'
@@ -163,6 +163,20 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
     private _throwIfAbortRequested(): void {
         if (this.isAbortRequested) throw new Error('This pool has been aborted.')
     }
+    private async _queueImpl(callback: (...args: any[]) => any, args: any[]): Promise<[IWpcpPoolPort, string]> {
+        const action = this._getQueueWorkerAction()
+        const port = action === 'reuse-cached'
+            ? this._reusePort()
+            : action === 'create-new'
+                ? await this._createPort(true)
+                : await this._waitForFreePort()
+        const serializedCallback = serializeFunction(callback)
+        const token = await port.beginExecute(serializedCallback, args)
+
+        if (token === null) throw new Error('STUB: Free port being executing')
+
+        return [port, token]
+    }
     async abort(): Promise<void> {
         if (this._isAbortRequested) return
 
@@ -193,34 +207,29 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
 
         return this
     }
-    async queue<C extends (...args: any[]) => any>(callback: C, ...args: Parameters<C>): Promise<ReturnType<C>> {
+    queue<C extends (...args: any[]) => any>(callback: C, ...args: Parameters<C>): IWorkerPoolItem<ReturnType<C>> {
         this._throwIfAbortRequested()
 
-        const action = this._getQueueWorkerAction()
-        const port = action === 'reuse-cached'
-            ? this._reusePort()
-            : action === 'create-new'
-                ? await this._createPort(true)
-                : await this._waitForFreePort()
-        const serializedCallback = serializeFunction(callback)
-        const token = await port.beginExecute(serializedCallback, args)
+        const promise = this._queueImpl(callback, args)
+        const resultPromise = promise
+            .then(([port, token]) => port.getResult(token).finally(() => {
+                const portIndex = this._busyPorts.indexOf(port)
 
-        if (token === null) throw new Error('STUB: Free port being executing')
+                if (portIndex < -0.5) throw new Error('STUB')
 
-        try {
-            return await port.getResult(token)
-        } finally {
-            const portIndex = this._busyPorts.indexOf(port)
+                this._busyPorts.splice(portIndex, 1)
+                this._freePorts.push(port)
+            }))
+        const cancel = () => promise.then(([port, token]) => {
+            const source = port.createCancellationSource(token)
+            source.cancel()
+        })
 
-            // eslint-disable-next-line no-unsafe-finally
-            if (portIndex < -0.5) throw new Error('STUB')
-
-            this._busyPorts.splice(portIndex, 1)
-            this._freePorts.push(port)
-        }
+        return new WorkerPoolItem(resultPromise, cancel)
     }
 }
 type WorkerPoolKeyConstructor = {
+    /** @since v1.0.0 */
     new(options?: Readonly<WorkerPoolOptions> | null): IWorkerPoolKey
 }
 /** @since v1.0.0 */
@@ -236,3 +245,34 @@ type QueueWorkerAction =
     | 'reuse-cached'
     | 'create-new'
     | 'wait-for-available'
+class WorkerPoolItem<T> implements IWorkerPoolItem<T> {
+    _isCancelled = false
+
+    get [Symbol.toStringTag](): string {
+        return WorkerPoolItem.name
+    }
+
+    constructor(
+        private readonly _promise: Promise<T>,
+        private readonly _cancel: () => any
+    ) {}
+
+    cancel(): void {
+        if (this._isCancelled) return
+
+        this._isCancelled = true
+        this._cancel()
+    }
+    then<U = T, E = never>(
+        onResolved?: ((value: T) => U | PromiseLike<U>) | null,
+        onRejected?: ((reason: any) => E | PromiseLike<E>) | null
+    ): Promise<U | E> {
+        return this._promise.then(onResolved, onRejected)
+    }
+    catch<U = never>(onRejected?: ((reason: any) => U | PromiseLike<U>) | null): Promise<T | U> {
+        return this._promise.catch(onRejected)
+    }
+    finally(onFinally?: (() => void) | null): Promise<T> {
+        return this._promise.finally(onFinally)
+    }
+}

@@ -38,9 +38,13 @@ export interface IWorkerPool {
     queue<C extends (...args: any[]) => any>(
         callback: C,
         ...args: Parameters<C>
-    ): Promise<ReturnType<C>>
+    ): IWorkerPoolItem<ReturnType<C>>
 }
 /** @since v1.0.0 */
 export type WorkerType =
     | 'web-worker'
     | 'worker-thread'
+/** @since v1.0.0 */
+export interface IWorkerPoolItem<T> extends Promise<T> {
+    cancel(): void
+}
