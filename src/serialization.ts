@@ -1,8 +1,8 @@
-const FUNCTION_PATTERN = /^(?:function)[^(]*\((?<args>[^)]*)\)\s*{(?<code>.*?)}$/gs
-const LAMBDA_PATTERN = /^\((?<args>[^)]*)\)\s*=>\s*{(?<code>.*)}$/gs
-const INLINE_LAMBDA_PATTERN = /^\((?<args>[^)]*)\)\s*=>\s*(?<result>[^{].*)$/gs
+const FUNCTION_PATTERN = /^function[^(]*\((?<args>[^)]*)\)\s*{(?<code>.*)}$/s
+const LAMBDA_PATTERN = /^\((?<args>[^)]*)\)\s*=>\s*{(?<code>.*)}$/s
+const INLINE_LAMBDA_PATTERN = /^(?:\((?<args>[^)]*)\)|(?<inlinedArgs>\S+))\s*=>\s*(?<result>[^{].*)$/s
 
-const AsyncFunction: typeof Function = Object.getPrototypeOf(async function(){}).constructor
+const AsyncFunction: typeof Function = Object.getPrototypeOf(async function() {}).constructor
 const ASYNC_FUCTION_PREFIX = 'async '
 
 /**
@@ -34,9 +34,9 @@ export function deserializeFunction(input: string): (...args: any[]) => any {
 
     if (match === null) throw new Error('Bad input.')
 
-    const {args: _args, code: _code, result} = match.groups!
+    const {args: _args, inlinedArgs, code: _code, result} = match.groups!
     const code = _code ?? `return ${result}`
-    const args = _args
+    const args = (typeof inlinedArgs === 'string' && inlinedArgs.length > 0.5 ? inlinedArgs : _args)
         .split(',')
         .map(arg => arg.trim())
 
