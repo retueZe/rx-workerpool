@@ -2,7 +2,9 @@ const FUNCTION_PATTERN = /^(?:function)[^(]*\((?<args>[^)]*)\)\s*{(?<code>.*?)}$
 const LAMBDA_PATTERN = /^\((?<args>[^)]*)\)\s*=>\s*{(?<code>.*)}$/gs
 const INLINE_LAMBDA_PATTERN = /^\((?<args>[^)]*)\)\s*=>\s*(?<result>[^{].*)$/gs
 
-// TODO: add support for `async` functions
+const AsyncFunction: typeof Function = Object.getPrototypeOf(async function(){}).constructor
+const ASYNC_FUCTION_PREFIX = 'async '
+
 /**
  * In current implementation: `callback.toString()`.
  *
@@ -19,6 +21,13 @@ export function serializeFunction(callback: (...args: any[]) => any): string {
  * @since v1.0.0
  */
 export function deserializeFunction(input: string): (...args: any[]) => any {
+    let constructor = Function
+
+    if (input.startsWith(ASYNC_FUCTION_PREFIX)) {
+        input = input.slice(ASYNC_FUCTION_PREFIX.length)
+        constructor = AsyncFunction
+    }
+
     const match = FUNCTION_PATTERN.exec(input)
         ?? LAMBDA_PATTERN.exec(input)
         ?? INLINE_LAMBDA_PATTERN.exec(input)
@@ -31,5 +40,5 @@ export function deserializeFunction(input: string): (...args: any[]) => any {
         .split(',')
         .map(arg => arg.trim())
 
-    return new Function(...args, code) as (...args: any[]) => any
+    return new constructor(...args, code) as (...args: any[]) => any
 }

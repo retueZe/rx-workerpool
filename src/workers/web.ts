@@ -22,7 +22,11 @@ async function main(port: IWpcpWorkerPort): Promise<void> {
         if (request === null) break
 
         try {
-            const result = request.callback(...request.args)
+            let result = request.callback(...request.args)
+
+            if (typeof result === 'object' && result !== null &&
+                typeof result.then === 'function')
+                result = await result
 
             request.resolve(result)
         } catch (error) {
