@@ -3,6 +3,11 @@ import { IWorkerPool } from '../abstraction.js'
 import { deserializeFunction, serializeFunction } from '../serialization.js'
 import { mapParallel } from './mapParallel.js'
 
+// TODO: optimize
+/**
+ * An analogue of RxJS `filter` operator, implemented via {@link mapParallel}.
+ * @since v1.0.0
+ */
 export function filterParallel<T>(predicate: (value: T) => boolean, pool: IWorkerPool): OperatorFunction<T, T> {
     const serializedPredicate = serializeFunction(predicate)
 

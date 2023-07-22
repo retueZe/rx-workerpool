@@ -8,6 +8,22 @@ const ASYNC_FUCTION_PREFIX = 'async '
 /**
  * In current implementation: `callback.toString()`.
  *
+ * Supported syntaxes:
+ * - `function (...) {...}`
+ * - `function example(...) {...}`
+ * - `async function (...) {...}`
+ * - `async function example(...) {...}`
+ * - `(...) => {...}`
+ * - `(...) => ...`
+ * - `x => {...}`
+ * - `x => ...`
+ * - `async (...) => {...}`
+ * - `async (...) => ...`
+ * - `async x => {...}`
+ * - `async x => ...`
+ *
+ * *Methods, bound functions are not supported.*
+ *
  * **This function is injected in workers' global scope.**
  * @since v1.0.0
  */
@@ -16,6 +32,22 @@ export function serializeFunction(callback: (...args: any[]) => any): string {
 }
 /**
  * Deserializes {@link serializeFunction} result and returns dynamically created function via {@link Function}'s constructor.
+ *
+ * Supported syntaxes:
+ * - `function (...) {...}`
+ * - `function example(...) {...}`
+ * - `async function (...) {...}`
+ * - `async function example(...) {...}`
+ * - `(...) => {...}`
+ * - `(...) => ...`
+ * - `x => {...}`
+ * - `x => ...`
+ * - `async (...) => {...}`
+ * - `async (...) => ...`
+ * - `async x => {...}`
+ * - `async x => ...`
+ *
+ * *Methods, bound functions are not supported.*
  *
  * **This function is injected in workers' global scope.**
  * @since v1.0.0
