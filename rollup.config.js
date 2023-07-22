@@ -55,6 +55,14 @@ function getWorkerEntries() {
     return readdirSync('src/workers')
         .map(entry => 'src/workers/' + entry)
 }
+function splitWorkerOptions(options) {
+    const input = options.input
+
+    return input.map(input => ({
+        ...options,
+        input
+    }))
+}
 
 /** @type {import('rollup').RollupOptions[]} */
 const config = [
@@ -85,12 +93,11 @@ const config = [
     }
 ].map(applyDefaultConfig)
 export default config.concat([
-    {
+    ...splitWorkerOptions({
         input: getWorkerEntries(),
         output: {
             dir: 'build',
             entryFileNames: workerEntryFileNames,
-            chunkFileNames: '.chunks/[name]-[hash].js',
             format: 'esm'
         },
         plugins: [
@@ -98,5 +105,5 @@ export default config.concat([
             terser({ecma: 2020})
         ],
         external: WORKERS_EXTERNAL
-    }
+    })
 ])
