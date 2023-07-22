@@ -195,7 +195,7 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
                 next: () => {
                     const port = this._freePorts.pop()!
                     port.close()
-                    
+
                     if (this._busyPorts.length > 0.5) return
 
                     subscription?.unsubscribe()
