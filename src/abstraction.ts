@@ -35,11 +35,10 @@ export interface IWorkerPool {
      * The {@link callback} is serialized by non-standard function serializer, the {@link args} are serialized by default.
      * @since v1.0.0
      */
-    queue<C extends (...args: any[]) => any>(
-        callback: C,
-        ...args: Parameters<C>
-    ): IWorkerPoolItem<ReturnType<C>>
+    queue<A extends any[], R>(callback: WorkerPoolCallback<A, R>, ...args: A): IWorkerPoolItem<R>
 }
+/** @since v1.0.0 */
+export type WorkerPoolCallback<A extends any[], R> = (...args: A) => R | PromiseLike<R>
 /** @since v1.0.0 */
 export type WorkerType =
     | 'web-worker'

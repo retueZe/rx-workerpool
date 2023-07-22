@@ -1,6 +1,6 @@
 import { isNode } from 'browser-or-node'
 import { Subject, Unsubscribable } from 'rxjs'
-import type { IWorkerPool, IWorkerPoolItem, IWorkerPoolKey, WorkerType } from './abstraction.js'
+import type { IWorkerPool, IWorkerPoolItem, IWorkerPoolKey, WorkerPoolCallback, WorkerType } from './abstraction.js'
 import { serializeFunction } from './serialization.js'
 import { createWebWorker, createWorkerThread } from './private/worker-factories.js'
 import type { WorkerFactory } from './private/WorkerFactory.js'
@@ -214,7 +214,7 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
 
         return this
     }
-    queue<C extends (...args: any[]) => any>(callback: C, ...args: Parameters<C>): IWorkerPoolItem<ReturnType<C>> {
+    queue<A extends any[], R>(callback: WorkerPoolCallback<A, R>, ...args: A): IWorkerPoolItem<R> {
         this._throwIfAbortRequested()
 
         const promise = this._queueImpl(callback, args)
