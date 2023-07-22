@@ -1,8 +1,8 @@
 import { Observable, OperatorFunction } from 'rxjs'
-import { IWorkerPool } from './abstraction.js'
+import { IWorkerPool } from '../abstraction.js'
 
-export function parallel<T, U>(
-    callback: (arg: T) => U | PromiseLike<U>,
+export function mapParallel<T, U>(
+    callback: (value: T) => U | PromiseLike<U>,
     pool: IWorkerPool
 ): OperatorFunction<T, U> {
     return source => new Observable(target => {
@@ -10,9 +10,9 @@ export function parallel<T, U>(
         let isCompleted = false
 
         source.subscribe({
-            next: arg => {
+            next: value => {
                 busyPortCount++
-                const item = pool.queue(callback, arg)
+                const item = pool.queue(callback, value)
                 item.then(result => {
                     busyPortCount--
                     target.next(result)
