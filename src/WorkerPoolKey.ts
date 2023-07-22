@@ -193,6 +193,9 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
             let subscription: Unsubscribable | null = null
             subscription = this._awakenedSubject.subscribe({
                 next: () => {
+                    const port = this._freePorts.pop()!
+                    port.close()
+                    
                     if (this._busyPorts.length > 0.5) return
 
                     subscription?.unsubscribe()
@@ -226,6 +229,7 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
 
                 this._busyPorts.splice(portIndex, 1)
                 this._freePorts.push(port)
+                this._awakenedSubject.next()
             }))
         const cancel = () => promise.then(([port, token]) => {
             const source = port.createCancellationSource(token)
