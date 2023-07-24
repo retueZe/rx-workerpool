@@ -1,6 +1,6 @@
 export * from './operators/index.js'
 export * from './abstraction.js'
-export * from './getSharedWorkerPool.js'
+export * from './shared-worker-pool.js'
 export * from './WorkerPool.js'
 export * from './WorkerPoolKey.js'
 export * from './serialization.js'
