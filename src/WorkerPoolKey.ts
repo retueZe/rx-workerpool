@@ -11,6 +11,8 @@ import { WorkerPool } from './WorkerPool.js'
 export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey implements IWorkerPoolKey {
     private readonly _freePorts: IWpcpPoolPort[] = []
     private readonly _busyPorts: IWpcpPoolPort[] = []
+    // fires when there's an oppotunity to get a worker
+    // MAYBE: use async/asap/queue scheduler?
     private readonly _awakenedSubject = new Subject<void>()
     private _desiredWorkerType: WorkerType
     private _minWorkerCount: number
@@ -72,11 +74,16 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
     private async _createPort(add?: boolean | null): Promise<IWpcpPoolPort> {
         add ??= false
         const factory = this._getWorkerFactory()
-        const poolPort = await factory(port => new WpcpPoolPort(port))
+        const port = await factory(port => new WpcpPoolPort(port))
 
-        if (add) this._busyPorts.push(poolPort)
+        if (this.isAbortRequested) {
+            port.close()
 
-        return poolPort
+            throw this._getAbortError()
+        }
+        if (add) this._busyPorts.push(port)
+
+        return port
     }
     private async _adjustWorkerCount(): Promise<void> {
         while (this._workerCount < this._minWorkerCount) {
@@ -101,6 +108,8 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
             const port = this._freePorts.pop()
             port!.close()
         }
+
+        this._awakenedSubject.next()
     }
     private _getQueueWorkerAction(): QueueWorkerAction {
         return this._freePorts.length > 0.5
@@ -122,13 +131,13 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
         return new Promise((resolve, reject) => {
             const onCompleted = (error?: any) => reject(typeof error === 'undefined'
                 ? error
-                : new Error('This pool has been disposed.'))
+                : this._getAbortError())
             let subscription: Unsubscribable | null = null
             subscription = this._awakenedSubject.subscribe({
                 next: () => {
                     const action = this._getQueueWorkerAction()
 
-                    if (action === 'create-new') return
+                    if (action === 'wait-for-available') return
 
                     subscription?.unsubscribe()
                     subscription = null
@@ -149,6 +158,7 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
                         if (stubIndex < -0.5) throw new Error('STUB')
 
                         // not using `_createPort(true)` to perform stub replacement atomically
+                        // (`_createPort(true)` does only the second call)
                         this._busyPorts.splice(stubIndex, 1)
                         this._busyPorts.push(port)
 
@@ -160,8 +170,11 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
             })
         })
     }
+    private _getAbortError(): Error {
+        return new Error('This pool has been aborted.')
+    }
     private _throwIfAbortRequested(): void {
-        if (this.isAbortRequested) throw new Error('This pool has been aborted.')
+        if (this.isAbortRequested) throw this._getAbortError()
     }
     private async _queueImpl(callback: (...args: any[]) => any, args: any[]): Promise<[IWpcpPoolPort, string]> {
         const action = this._getQueueWorkerAction()
@@ -177,8 +190,6 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
 
         return [port, token]
     }
-    // TODO: when port is initializing, it's not in `_freePorts` or `_busyPorts`, so, calling abort doesn't abort them
-    // TODO: have to fix it
     async abort(): Promise<void> {
         if (this._isAbortRequested) return
 

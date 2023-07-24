@@ -45,5 +45,6 @@ export type WorkerType =
     | 'worker-thread'
 /** @since v1.0.0 */
 export interface IWorkerPoolItem<T> extends Promise<T> {
+    /** @since v1.0.0 */
     cancel(): void
 }
