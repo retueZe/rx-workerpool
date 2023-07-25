@@ -21,7 +21,9 @@ export interface IWorkerPoolKey extends IWorkerPool {
      * Specifies what type of workers will be produced by the {@link IWorkerPool.queue} method when there are no cached workers. Already created workers are not affected.
      * @since v1.0.0
      */
-    setDesiredWorkerType(type: WorkerType | null): this
+    setDesiredWorkerType(type: WorkerType | null): void
+    /** @since v1.0.0 */
+    setLifetime(lifetime: IWorkerLifetime | null): void
 }
 /** @since v1.0.0 */
 export interface IWorkerPool {
@@ -47,4 +49,17 @@ export type WorkerType =
 export interface IWorkerPoolItem<T> extends Promise<T> {
     /** @since v1.0.0 */
     cancel(): void
+}
+/** @since v1.0.0 */
+export interface IWorkerLifetime {
+    /**
+     * Specifies number of workers into the account. If during a setter call {@link count} didn't change, then affect all the async operations as {@link count} actually did change, but do not call {@link onExpired}.
+     * @since v1.0.0
+     */
+    count: number
+    /**
+     * Expiration mechanism should only work when this property is set, otherwise no extra async opearations should be performed.
+     * @since v1.0.0
+     */
+    onExpired: ((count: number) => void) | null
 }

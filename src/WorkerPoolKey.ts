@@ -1,6 +1,6 @@
 import { isNode } from 'browser-or-node'
 import { Subject, Unsubscribable } from 'rxjs'
-import type { IWorkerPool, IWorkerPoolItem, IWorkerPoolKey, WorkerPoolCallback, WorkerType } from './abstraction.js'
+import type { IWorkerLifetime, IWorkerPool, IWorkerPoolItem, IWorkerPoolKey, WorkerPoolCallback, WorkerType } from './abstraction.js'
 import { serializeFunction } from './serialization.js'
 import { createWebWorker, createWorkerThread } from './private/worker-factories.js'
 import type { WorkerFactory } from './private/WorkerFactory.js'
@@ -15,6 +15,7 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
     // MAYBE: use async/asap/queue scheduler?
     private readonly _awakenedSubject = new Subject<void>()
     private _desiredWorkerType: WorkerType
+    private _lifetime: IWorkerLifetime | null = null
     private _minWorkerCount: number
     private _maxWorkerCount: number | null
     private _isAbortRequested = false
@@ -61,6 +62,8 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
 
         if (this._maxWorkerCount !== null)
             this._maxWorkerCount = Math.floor(this._maxWorkerCount)
+
+        this.setLifetime(options?.lifetime ?? null)
     }
 
     private static _normalizeWorkerType(type: WorkerType | null | undefined): WorkerType {
@@ -86,6 +89,9 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
         return port
     }
     private async _adjustWorkerCount(): Promise<void> {
+        const lifetime = this._lifetime
+        this.setLifetime(null)
+
         while (this._workerCount < this._minWorkerCount) {
             const port = await this._createPort()
 
@@ -100,15 +106,16 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
 
         const maxCount = this._maxWorkerCount
 
-        if (maxCount === null || this._workerCount < maxCount + 0.5) return
+        if (maxCount !== null && this._workerCount > maxCount + 0.5) {
+            const toClose = Math.min(this._workerCount - maxCount, this._freePorts.length)
 
-        const toClose = Math.min(this._workerCount - maxCount, this._freePorts.length)
-
-        for (let i = 0; i < toClose - 0.5; i++) {
-            const port = this._freePorts.pop()
-            port!.close()
+            for (let i = 0; i < toClose - 0.5; i++) {
+                const port = this._freePorts.pop()
+                port!.close()
+            }
         }
 
+        this.setLifetime(lifetime)
         this._awakenedSubject.next()
     }
     private _getQueueWorkerAction(): QueueWorkerAction {
@@ -124,6 +131,9 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
         if (typeof port === 'undefined') throw new Error('STUB')
 
         this._busyPorts.push(port)
+
+        if (this._lifetime !== null && this._lifetime.count > 0.5)
+            this._lifetime.count--
 
         return port
     }
@@ -190,10 +200,17 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
 
         return [port, token]
     }
+    private _onExpired(count: number): void {
+        const ports = this._freePorts.splice(0, count)
+
+        for (const port of ports)
+            port.close()
+    }
     async abort(): Promise<void> {
         if (this._isAbortRequested) return
 
         this._isAbortRequested = true
+        this.setLifetime(null)
 
         for (const port of this._freePorts)
             port.close()
@@ -221,12 +238,23 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
         this._awakenedSubject.complete()
         this._isAborted = true
     }
-    setDesiredWorkerType(type: WorkerType | null): this {
+    setDesiredWorkerType(type: WorkerType | null): void {
         this._throwIfAbortRequested()
 
         this._desiredWorkerType = WorkerPoolKey._normalizeWorkerType(type)
-
-        return this
+    }
+    setLifetime(lifetime: IWorkerLifetime | null): void {
+        if (this._lifetime !== null) {
+            this._lifetime.onExpired = null
+            this._lifetime.count = 0
+            this._lifetime = null
+        }
+        if (lifetime !== null) {
+            lifetime.onExpired = null
+            lifetime.count = this._freePorts.length - this._minWorkerCount
+            lifetime.onExpired = this._onExpired.bind(this)
+            this._lifetime = lifetime
+        }
     }
     queue<A extends any[], R>(callback: WorkerPoolCallback<A, R>, ...args: A): IWorkerPoolItem<R> {
         this._throwIfAbortRequested()
@@ -240,6 +268,10 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
 
                 this._busyPorts.splice(portIndex, 1)
                 this._freePorts.push(port)
+
+                if (this._lifetime !== null && this._freePorts.length > this._minWorkerCount + 0.5)
+                    this._lifetime.count++
+
                 this._awakenedSubject.next()
             }))
         const cancel = () => promise.then(([port, token]) => {
@@ -262,6 +294,8 @@ export type WorkerPoolOptions = Partial<{
     minWorkerCount: number | null
     /** @since v1.0.0 */
     maxWorkerCount: number | null
+    /** @since v1.0.0 */
+    lifetime: IWorkerLifetime | null
 }>
 type QueueWorkerAction =
     | 'reuse-cached'
