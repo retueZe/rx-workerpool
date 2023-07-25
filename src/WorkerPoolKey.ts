@@ -209,34 +209,37 @@ export const WorkerPoolKey: WorkerPoolKeyConstructor = class WorkerPoolKey imple
     async abort(): Promise<void> {
         if (this._isAbortRequested) return
 
-        this._isAbortRequested = true
-        this.setLifetime(null)
+        try {
+            this._isAbortRequested = true
+            this.setLifetime(null)
 
-        for (const port of this._freePorts)
-            port.close()
+            for (const port of this._freePorts)
+                port.close()
 
-        this._freePorts.length = 0
+            this._freePorts.length = 0
 
-        if (this._busyPorts.length > 0.5) await new Promise<void>((resolve, reject) => {
-            let subscription: Unsubscribable | null = null
-            subscription = this._awakenedSubject.subscribe({
-                next: () => {
-                    const port = this._freePorts.pop()!
-                    port.close()
+            if (this._busyPorts.length > 0.5) await new Promise<void>((resolve, reject) => {
+                let subscription: Unsubscribable | null = null
+                subscription = this._awakenedSubject.subscribe({
+                    next: () => {
+                        const port = this._freePorts.pop()!
+                        port.close()
 
-                    if (this._busyPorts.length > 0.5) return
+                        if (this._busyPorts.length > 0.5) return
 
-                    subscription?.unsubscribe()
-                    subscription = null
-                    resolve()
-                },
-                error: reject,
-                complete: () => reject(new Error('STUB: other source of completion'))
+                        subscription?.unsubscribe()
+                        subscription = null
+                        resolve()
+                    },
+                    error: reject,
+                    complete: () => reject(new Error('STUB: other source of completion'))
+                })
             })
-        })
 
-        this._awakenedSubject.complete()
-        this._isAborted = true
+            this._awakenedSubject.complete()
+        } finally {
+            this._isAborted = true
+        }
     }
     setDesiredWorkerType(type: WorkerType | null): void {
         this._throwIfAbortRequested()
