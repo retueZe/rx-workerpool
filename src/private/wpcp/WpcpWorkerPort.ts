@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs'
 import { deserializeFunction } from '../../serialization.js'
 import type { IWpcpCancellationSignal, IWpcpCancellationSource, IWpcpWorkerPort, WpcpExecutionRequest, WpcpExecutionStatus, WpcpRequest } from './abstraction.js'
-import { ExecutionCancelledError } from './ExecutionCancelledError.js'
+import { CancellationError } from '../../CancellationError.js'
 import { generateToken } from './generateToken.js'
 import { PortAbortedError } from './PortAbortedError.js'
 import { WpcpPortBase } from './WpcpPortBase.js'
@@ -51,7 +51,7 @@ export class WpcpWorkerPort extends WpcpPortBase implements IWpcpWorkerPort {
             },
             reject: error => {
                 if (this._currentToken !== token) return
-                if (error instanceof ExecutionCancelledError)
+                if (error instanceof CancellationError)
                     this._endExecution('cancelled', error)
                 else
                     this._endExecution('failed', error)
@@ -129,6 +129,6 @@ class CancellationSource implements IWpcpCancellationSource, IWpcpCancellationSi
         this._cancellationSubject.complete()
     }
     throwIfCancellationRequested(): void {
-        if (this.isCancellationRequested) throw new ExecutionCancelledError()
+        if (this.isCancellationRequested) throw new CancellationError()
     }
 }

@@ -1,6 +1,7 @@
 export * from './lifetimes/index.js'
 export * from './operators/index.js'
 export * from './abstraction.js'
+export * from './CancellationError.js'
 export * from './shared-worker-pool.js'
 export * from './WorkerPool.js'
 export * from './WorkerPoolKey.js'

@@ -1,6 +1,6 @@
 import { Subject, Unsubscribable } from 'rxjs'
 import type { IWpcpCancellationSignal, IWpcpCancellationSource, IWpcpPoolPort, WpcpExecutionStatus, WpcpRequest } from './abstraction.js'
-import { ExecutionCancelledError } from './ExecutionCancelledError.js'
+import { CancellationError } from '../../CancellationError.js'
 import { WpcpPortBase } from './WpcpPortBase.js'
 
 export class WpcpPoolPort extends WpcpPortBase implements IWpcpPoolPort {
@@ -120,6 +120,6 @@ class CancellationSource implements IWpcpCancellationSource, IWpcpCancellationSi
         this._cancellationSubject.complete()
     }
     throwIfCancellationRequested(): void {
-        if (this.isCancellationRequested) throw new ExecutionCancelledError()
+        if (this.isCancellationRequested) throw new CancellationError()
     }
 }
