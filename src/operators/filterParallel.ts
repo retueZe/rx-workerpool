@@ -8,7 +8,7 @@ import { mapParallel } from './mapParallel.js'
  * An analogue of RxJS `filter` operator, implemented via {@link mapParallel}.
  * @since v1.0.0
  */
-export function filterParallel<T>(predicate: (value: T) => boolean, pool: IWorkerPool): OperatorFunction<T, T> {
+export function filterParallel<T>(predicate: (value: T) => boolean, pool?: IWorkerPool | null): OperatorFunction<T, T> {
     const serializedPredicate = serializeFunction(predicate)
 
     return pipe(

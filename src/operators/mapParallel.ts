@@ -1,5 +1,6 @@
 import { Observable, OperatorFunction } from 'rxjs'
 import { IWorkerPool } from '../abstraction.js'
+import { getSharedWorkerPool } from '../shared-worker-pool.js'
 
 // TODO: add `ordered` option
 /**
@@ -8,8 +9,10 @@ import { IWorkerPool } from '../abstraction.js'
  */
 export function mapParallel<T, U>(
     callback: (value: T) => U | PromiseLike<U>,
-    pool: IWorkerPool
+    _pool?: IWorkerPool | null
 ): OperatorFunction<T, U> {
+    const pool = _pool ?? getSharedWorkerPool()
+
     return source => new Observable(target => {
         let busyPortCount = 0
         let isCompleted = false
